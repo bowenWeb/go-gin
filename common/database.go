@@ -39,7 +39,6 @@ func InitDB() *gorm.DB {
 		database,
 		charset,
 		url.QueryEscape(loc))
-	fmt.Printf(args)
 	db, err := gorm.Open(driverName, args)
 	if err != nil {
 		panic("fail to connect database, err: " + err.Error())

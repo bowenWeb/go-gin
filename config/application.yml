@@ -7,5 +7,5 @@ datasource:
   database: ginessential
   username: root
   password: admin123
-  charset: utf8mb4
-  loc: Asia/Shanghai
+  charset: utf8
+  loc: Local

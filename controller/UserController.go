@@ -2,7 +2,9 @@ package controller
 
 import (
 	"bo-gin/common"
+	"bo-gin/dto"
 	"bo-gin/model"
+	"bo-gin/response"
 	"log"
 	"net/http"
 
@@ -19,23 +21,17 @@ func Register(ctx *gin.Context) {
 	password := ctx.PostForm("password")
 
 	if len(password) < 6 {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 422,
-			"msg":  "密码长度必须大于6位",
-		})
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "密码长度必须大于6位")
 		return
 	}
 	if IsPhoneExist(DB, phone) {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{
-			"code": 422,
-			"msg":  "手机号已存在",
-		})
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "手机号已存在")
 		return
 	}
 	// 如果用户不存在，密码符合规则，新建用户
 	cryptPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "msg": "加密错误"})
+		response.Response(ctx, http.StatusInternalServerError, 500, nil, "加密错误")
 		return
 	}
 	newUser := model.User{
@@ -45,10 +41,13 @@ func Register(ctx *gin.Context) {
 	}
 	DB.Create(&newUser)
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  "注册成功",
-	})
+	response.Success(
+		ctx,
+		gin.H{
+			"msg": "",
+		},
+		"注册成功",
+	)
 }
 
 func Login(ctx *gin.Context) {
@@ -60,33 +59,39 @@ func Login(ctx *gin.Context) {
 	var user model.User
 	DB.Where("phone =?", phone).First(&user)
 	if user.ID == 0 {
-		ctx.JSON(
-			http.StatusUnprocessableEntity,
-			gin.H{"code": 422, "msg": "用户不存在"},
-		)
+		response.Response(ctx, http.StatusUnprocessableEntity, 422, nil, "用户不存在")
 		return
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"code": 500, "msg": "密码错误"})
+		response.Response(ctx, http.StatusBadRequest, 500, nil, "密码错误")
 		return
 	}
 
 	token, err := common.ReleaseToken(user)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"code": 500, "msg": "系统错误"})
+		response.Response(ctx, http.StatusBadRequest, 500, nil, "系统错误")
 		log.Printf("token 生成 失败")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": gin.H{
+	response.Success(
+		ctx,
+		gin.H{
 			"token": token,
 		},
-		"msg": "登录成功",
-	})
+		"登录成功",
+	)
+}
+
+func UserInfo(ctx *gin.Context) {
+	user, _ := ctx.Get("user")
+	response.Success(
+		ctx,
+		gin.H{"user": dto.ToUserDto(user.(model.User))},
+		"获取成功",
+	)
 }
 
 func IsPhoneExist(db *gorm.DB, phone string) bool {

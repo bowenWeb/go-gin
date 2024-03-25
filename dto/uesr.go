@@ -3,13 +3,13 @@ package dto
 import "bo-gin/model"
 
 type UserDto struct {
-	Name      string `json:"name"`
-	Telephone string `json:"telephone"`
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
 }
 
 func ToUserDto(user model.User) UserDto {
 	return UserDto{
-		Name:      user.Name,
-		Telephone: user.Phone,
+		Name:  user.Name,
+		Phone: user.Phone,
 	}
 }
